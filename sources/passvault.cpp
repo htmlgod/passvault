@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 
+#include <clip.h>
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;
@@ -26,6 +27,7 @@ auto main(int argc, char** argv) -> int {
     }
     if (vm.count("get_pass")) {
         std::cout << "get_pass" << "\n";
+        clip::set_text("ABOBA");
         return 0;
     }
     if (vm.count("check_pass")) {

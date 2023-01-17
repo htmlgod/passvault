@@ -4,3 +4,6 @@
 [submodule "third_party/program_options"]
 	path = third_party/program_options
 	url = https://github.com/boostorg/program_options
+[submodule "third_party/clip"]
+	path = third_party/clip
+	url = https://github.com/dacap/clip.git
