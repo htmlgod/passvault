@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2021) (preloaded format=pdflatex 2021.6.3)  17 JAN 2023 21:31
+This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2021) (preloaded format=pdflatex 2021.6.3)  18 JAN 2023 00:19
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1546,10 +1546,8 @@ Package csquotes Info: ... found 'babel' package.
 Package csquotes Info: Adjusting default style.
 Package csquotes Info: Redefining alias 'default' -> 'russian'.
 
-(./coursework.aux (./01-definitions.aux) (./02-abbreviations.aux)
-(./03-introduction.aux) (./04-analysis.aux) (./05-design.aux)
-(./06-implementation.aux) (./07-research.aux) (./08-conclusion.aux)
-(./09-appendix.aux))
+(./coursework.aux (./01-introduction.aux) (./02-espd.aux) (./03-realisation.aux
+) (./04-examples.aux) (./05-conclusion.aux) (./09-appendix.aux))
 \openout1 = `coursework.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 5.
@@ -1730,7 +1728,7 @@ LaTeX Info: Redefining \nameref on input line 5.
 Package lastpage Info: Please have a look at the pageslts package at
 (lastpage)             https://www.ctan.org/pkg/pageslts
 (lastpage)             ! on input line 5.
-<img/bmstu-logo.pdf, id=46, 500.95255pt x 591.38255pt>
+<img/bmstu-logo.pdf, id=82, 500.95255pt x 591.38255pt>
 File: img/bmstu-logo.pdf Graphic file (type pdf)
 <use img/bmstu-logo.pdf>
 Package pdftex.def Info: img/bmstu-logo.pdf  used on input line 15.
@@ -1779,79 +1777,58 @@ LaTeX Font Warning: Font shape `T2A/cmr/bx/n' in size <16> not available
  [2
 
 ]
-\openout2 = `01-definitions.aux'.
+\openout2 = `01-introduction.aux'.
 
- (./01-definitions.tex) [3
-
-
-]
-\openout2 = `02-abbreviations.aux'.
-
- (./02-abbreviations.tex)
-[4
-
-
+ (./01-introduction.tex) [3
 
 
 ]
-\openout2 = `03-introduction.aux'.
+\openout2 = `02-espd.aux'.
 
- (./03-introduction.tex) [5
-
-
-
-
-]
-\openout2 = `04-analysis.aux'.
-
- (./04-analysis.tex
+ (./02-espd.tex
 {\cyrillictext \CYRG \cyrl \cyra \cyrv \cyra } 1.
+
+Overfull \hbox (94.55045pt too wide) in paragraph at lines 5--7
+[]\T2A/cmr/m/n/14.4 (-20) asdasdasdasdasdaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaasda
+sdasdasdasdasdasdasdasdasdasdasd
+ []
+
+) [4
+
+
+
+
+]
+\openout2 = `03-realisation.aux'.
+
+ (./03-realisation.tex
+{\cyrillictext \CYRG \cyrl \cyra \cyrv \cyra } 2.
+) [5
+
+
+
+
+]
+\openout2 = `04-examples.aux'.
+
+ (./04-examples.tex
+{\cyrillictext \CYRG \cyrl \cyra \cyrv \cyra } 3.
 ) [6
 
 
 
 
 ]
-\openout2 = `05-design.aux'.
+\openout2 = `05-conclusion.aux'.
 
- (./05-design.tex
-{\cyrillictext \CYRG \cyrl \cyra \cyrv \cyra } 2.
-) [7
-
-
-
-
-]
-\openout2 = `06-implementation.aux'.
-
- (./06-implementation.tex
-{\cyrillictext \CYRG \cyrl \cyra \cyrv \cyra } 3.
-) [8
-
-
-
-
-]
-\openout2 = `07-research.aux'.
-
- (./07-research.tex
-{\cyrillictext \CYRG \cyrl \cyra \cyrv \cyra } 4.
-) [9
-
-
-
-
-]
-\openout2 = `08-conclusion.aux'.
-
- (./08-conclusion.tex) [10
+ (./05-conclusion.tex) [7
 
 
 
 
 ]
 
-LaTeX Warning: Empty bibliography on input line 29.
+LaTeX Warning: Empty bibliography on input line 26.
 
 \openout2 = `09-appendix.aux'.
 
@@ -1862,33 +1839,31 @@ name{appendixchapters.1}) has been already used, duplicate ignored
 l.2 	\chapter{}
                
 ПРИЛОЖЕНИЕ \CYRA .
-) [11
+) [8
 
 
 
 
 ] 
 AED: lastpage setting LastPage
-(./coursework.aux (./01-definitions.aux) (./02-abbreviations.aux)
-(./03-introduction.aux) (./04-analysis.aux) (./05-design.aux)
-(./06-implementation.aux) (./07-research.aux) (./08-conclusion.aux)
-(./09-appendix.aux))
+(./coursework.aux (./01-introduction.aux) (./02-espd.aux) (./03-realisation.aux
+) (./04-examples.aux) (./05-conclusion.aux) (./09-appendix.aux))
 
 LaTeX Font Warning: Size substitutions with differences
 (Font)              up to 1.28pt have occurred.
 
 Package rerunfilecheck Info: File `coursework.out' has not changed.
-(rerunfilecheck)             Checksum: 86376FA398A8F6B64D5BFD61FB0A3B33;1911.
+(rerunfilecheck)             Checksum: BB2E8863E401A747B166B79CACC83099;3189.
 Package logreq Info: Writing requests to 'coursework.run.xml'.
 \openout1 = `coursework.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 46940 strings out of 478994
- 1009553 string characters out of 5858185
- 2108099 words of memory out of 5000000
- 63475 multiletter control sequences out of 15000+600000
- 421642 words of font info for 92 fonts, out of 8000000 for 9000
+ 46961 strings out of 478994
+ 1009746 string characters out of 5858185
+ 2098164 words of memory out of 5000000
+ 63504 multiletter control sequences out of 15000+600000
+ 424103 words of font info for 106 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  132i,19n,130p,1155b,3053s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/local/texlive/2021/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t2a.enc
@@ -1900,10 +1875,10 @@ ocal/texlive/2021/texmf-dist/fonts/type1/public/cm-super/sfrm1200.pfb></usr/loc
 al/texlive/2021/texmf-dist/fonts/type1/public/cm-super/sfrm1440.pfb></usr/local
 /texlive/2021/texmf-dist/fonts/type1/public/cm-super/sfti1440.pfb></usr/local/t
 exlive/2021/texmf-dist/fonts/type1/public/cm-super/sfti2074.pfb>
-Output written on coursework.pdf (11 pages, 283100 bytes).
+Output written on coursework.pdf (8 pages, 293022 bytes).
 PDF statistics:
- 156 PDF objects out of 1000 (max. 8388607)
- 132 compressed objects within 2 object streams
- 27 named destinations out of 1000 (max. 500000)
- 32866 words of extra memory for PDF output out of 35830 (max. 10000000)
+ 189 PDF objects out of 1000 (max. 8388607)
+ 168 compressed objects within 2 object streams
+ 32 named destinations out of 1000 (max. 500000)
+ 39082 words of extra memory for PDF output out of 42996 (max. 10000000)
 
