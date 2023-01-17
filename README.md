@@ -13,3 +13,10 @@
 9. [ ] pass entropy check
 10. [ ] Pass gen
 11. [ ] CPACK
+
+
+## REFS
+
+1. [program_options](https://www.boost.org/doc/libs/1_81_0/doc/html/program_options.html)
+2. [HUNTER](https://hunter.readthedocs.io/en/latest/quick-start/boost-components.html#)
+3. [clip](https://github.com/dacap/clip/wiki#who-is-using-clip)
