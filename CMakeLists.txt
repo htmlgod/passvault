@@ -13,7 +13,6 @@ project(passvault)
 
 hunter_add_package(Boost COMPONENTS program_options)
 
-
 find_package(Boost CONFIG REQUIRED program_options)
 
 add_executable(passvault sources/passvault.cpp)
