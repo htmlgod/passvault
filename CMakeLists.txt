@@ -19,5 +19,15 @@ include_directories(
 hunter_add_package(Boost COMPONENTS program_options)
 find_package(Boost CONFIG REQUIRED program_options)
 
-add_executable(passvault sources/passvault.cpp)
-target_link_libraries(passvault PUBLIC Boost::program_options clip)
+add_executable(
+    ${PROJECT_NAME} 
+    ${CMAKE_CURRENT_SOURCE_DIR}/sources/passvault.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/sources/vault.cpp
+)
+target_include_directories(
+    ${PROJECT_NAME}
+    PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/headers
+)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC Boost::program_options clip)

@@ -1,6 +1,4 @@
-#include <iostream>
-#include <string>
-
+#include <vault.hpp>
 #include <clip.h>
 #include <boost/program_options.hpp>
 
@@ -12,36 +10,55 @@ auto main(int argc, char** argv) -> int {
     desc.add_options()
         ("help", "produce help message")
         ("get_pass", po::value<std::string>(), "get password for site/service")
-        ("check_pass", po::value<std::string>(), "check password strength")
-        ("gen_pass_and_add", po::value<std::string>(), "gen password for site/service")
-        ("gen_pass", "gen password")
+        ("save_pass", po::value<std::string>(), "save password for site/service from clipboard")
+        //("check_pass", po::value<std::string>(), "check password strength")
+        //("gen_pass_and_add", po::value<std::string>(), "gen password for site/service")
+        //("gen_pass", "gen password")
     ;
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);    
 
+    PassVault pv;
     if (vm.count("help")) {
         std::cout << desc << "\n";
         return 0;
     }
     if (vm.count("get_pass")) {
         std::cout << "get_pass" << "\n";
-        clip::set_text("ABOBA");
+        auto service = vm["get_pass"].as<std::string>();
+        std::string pass;
+        try {
+            pass = pv.get_pass(service);
+            clip::set_text(pass);
+            return 0;
+        }
+        catch (std::out_of_range& err) {
+            std::cout << err.what() << std::endl;
+            return 1;
+        }
+    }
+    if (vm.count("save_pass")) {
+        std::cout << "save_pass" << "\n";
+        auto service = vm["save_pass"].as<std::string>();
+        std::string pass_from_cp;
+        clip::get_text(pass_from_cp);
+        pv.save_pass(service, pass_from_cp);
         return 0;
     }
-    if (vm.count("check_pass")) {
-        std::cout << "check_pass" << "\n";
-        return 0;
-    }
-    if (vm.count("gen_pass_and_add")) {
-        std::cout << "gen_pass_and_add" << "\n";
-        return 0;
-    }
-    if (vm.count("gen_pass")) {
-        std::cout << "gen_pass" << "\n";
-        return 0;
-    }
+    // if (vm.count("check_pass")) {
+    //     std::cout << "check_pass" << "\n";
+    //     return 0;
+    // }
+    // if (vm.count("gen_pass_and_add")) {
+    //     std::cout << "gen_pass_and_add" << "\n";
+    //     return 0;
+    // }
+    // if (vm.count("gen_pass")) {
+    //     std::cout << "gen_pass" << "\n";
+    //     return 0;
+    // }
 
     return 0;
 }
