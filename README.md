@@ -2,24 +2,23 @@
 
 ## TODO
 
-[x] CMakeLists.txt
-
-[x] boost program_options
-[x] clipboard
-[x] cross-platform
-[x] class vault for passwords
-[x] HMAC (imitovstavka)
-[x] encryption(kuznechik?)
-[ ] configure program_options for login and other
-[ ] add build instructions
-[ ] Config
-[ ] Config file
-[ ] hash for DB check
-[ ] pass entropy check
-[ ] Pass gen
-[ ] Shell
-[ ] Refactor
-[ ] CPACK
+- [x] CMakeLists.txt
+- [x] boost program_options
+- [x] clipboard
+- [x] cross-platform
+- [x] class vault for passwords
+- [x] HMAC (imitovstavka)
+- [x] encryption(kuznechik?)
+- [ ] configure program_options for login and other
+- [ ] add build instructions
+- [ ] Config
+- [ ] Config file
+- [ ] hash for DB check
+- [ ] pass entropy check
+- [ ] Pass gen
+- [ ] Shell
+- [ ] Refactor
+- [ ] CPACK
 
 
 ## REFS
