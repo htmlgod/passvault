@@ -1,22 +1,37 @@
 #include <vault.hpp>
 
-PassVault::PassVault(const std::string& pass) {
-    _master_pass = pass;
-    if (std::filesystem::exists(DB_PATH.data())){
-        load_db();
+PassVault::PassVault(const PassVaultConfig& pv_cfg) : cfg(pv_cfg) {
+    if (std::filesystem::exists(pv_cfg.db_path)) {
+        load_db(); // throw exception
     } 
+}
+
+PassVault::~PassVault() {
+    dump_db();
+}
+
+// maybe add feature to check DB for identical passwords
+void PassVault::examine() {
+    std::cout << "Amount of records: " << this->_vault.size() << std::endl;
+    for (const auto& [service, ve] : this->_vault) {
+        std::cout << service  << " "
+                  << ve.login << " "
+                  // entropy 
+                  // pass_strength
+                  // creation date
+                  << std::endl;
+    }
 }
 
 // mb add checksum for db(hash)
 // add magic header for file and check
 void PassVault::load_db() {
-    std::ifstream ifs(DB_PATH.data(), std::ios::binary);
+    std::ifstream ifs(this->cfg.db_path, std::ios::binary);
     if (!ifs.is_open()) {
         std::cout << "Failed to open DB" << std::endl;
     }
     size_t records;
     ifs.read(util::as_bytes(records), sizeof(records));
-    std::cout << records << std::endl;
     char* tmp = new char[BUFFER_SIZE + 1];
     for (size_t i = 0; i < records; ++i) {
         std::string service;
@@ -27,7 +42,6 @@ void PassVault::load_db() {
         tmp[service_str_size] = '\0';
         service = tmp;
 
-        std::cout << service << std::endl;
         VaultEntity ve{};
         ifs.read(util::as_bytes(ve), sizeof(ve));
         _vault[service] = ve;
@@ -36,11 +50,10 @@ void PassVault::load_db() {
 }
 
 void PassVault::dump_db() {
-    std::ofstream ofs(DB_PATH.data(), std::ios::binary);
+    std::ofstream ofs(this->cfg.db_path, std::ios::binary);
     if (!ofs.is_open()) {
         std::cout << "Failed to save DB" << std::endl;
     }
-    std::cout << "SAVING DB" << std::endl;
 
     auto entries = _vault.size();
     ofs.write((const char*)&entries, sizeof(entries));
@@ -52,19 +65,45 @@ void PassVault::dump_db() {
     }
 }
 
-
-void PassVault::save_pass(std::string& service, std::string& password) {
-    _vault.insert_or_assign(service, encrypt(password));
-}
-
-
-std::string PassVault::get_pass(std::string& service) {
-    std::cout << "get_pass START" << std::endl;
-    return decrypt(_vault.at(service));
-}
-
-VaultEntity PassVault::encrypt(std::string& password) {
+VaultEntity PassVault::create_vault_entity(const std::string& login) {
     VaultEntity ve{};
+    ve.login_str_len = login.size();
+    ve.login = login;
+
+    encrypt_vault_entity_secrets(ve);
+
+    return ve;
+}
+
+void PassVault::save_pass(const std::string& service, const std::string& login) {
+    auto ve = create_vault_entity(login);
+    _vault.insert_or_assign(service, ve);
+}
+
+
+void PassVault::del_pass(const std::string& service) {
+    this->_vault.erase(service);
+}
+void PassVault::get_pass(std::string& service) {
+    auto ve = this->_vault.at(service);
+    decrypt_vault_entity_secrets(ve);
+    std::cout << "Login for service " << service << ":"<< ve.login << std::endl;
+    std::cout << "Password saved to clipboard" << std::endl;
+}
+
+std::string PassVault::get_password_from_clipboard() const {
+    std::string password;
+    clip::get_text(password);
+    return password;
+}
+void PassVault::save_password_to_clipboard(const std::string& password) const {
+    clip::set_text(password);
+}
+
+void PassVault::encrypt_vault_entity_secrets(VaultEntity& ve) {
+    util::input_master_password(this->_master_pass);
+    auto password = get_password_from_clipboard();
+
     ve.pass_len = password.size();
 
     uint8_t master_hmac_keys[DOUBLE_KEY_SIZE];
@@ -84,11 +123,11 @@ VaultEntity PassVault::encrypt(std::string& password) {
     util::print_bytes(std::as_bytes(std::span{ve.iv}));
     std::cout << "enc_pass = ";
     util::print_bytes(std::as_bytes(std::span{ve.enc_password}));
-    return ve;
 }
 
-std::string PassVault::decrypt(VaultEntity& ve) {
-    std::cout << "DECR START" << std::endl;
+void PassVault::decrypt_vault_entity_secrets(VaultEntity& ve) {
+    util::input_master_password(this->_master_pass);
+
     uint8_t master_hmac_keys[DOUBLE_KEY_SIZE];
     uint8_t pass_key[KEY_SIZE];
 
@@ -114,10 +153,5 @@ std::string PassVault::decrypt(VaultEntity& ve) {
     util::print_bytes(std::as_bytes(std::span{ve.iv}));
     std::cout << "enc_pass = ";
     util::print_bytes(std::as_bytes(std::span{ve.enc_password}));
-    return out;
+    save_password_to_clipboard(out);
 }
-
-PassVault::~PassVault() {
-    dump_db();
-}
-

@@ -1,5 +1,44 @@
 #include <secrets.hpp>
 
+void util::save_bytes_to_file(uint8_t* bytes, size_t size, const std::string& file_name) {
+    std::ofstream ofs(file_name, std::ios::binary);
+    if (ofs) {
+        ofs.write(as_bytes(*bytes), size); // IDK WHAT IS HAPPENING HERE
+        std::cout << "WRITTEN TO " << file_name << std::endl;
+    }
+}
+
+void util::load_bytes_from_file(uint8_t* bytes, size_t size, const std::string& file_name) {
+    std::ifstream ifs(file_name, std::ios::binary);
+    if (ifs) {
+        ifs.read(as_bytes(*bytes), size);
+        std::cout << "READ FROM " << file_name << std::endl;
+    }
+}
+
+void util::input_master_password(std::string& pass) {
+    util::toggle_console_echo(false);
+    std::cout << "Enter master pass: ";
+    std::getline(std::cin, pass);
+    std::cout << std::endl;
+    util::toggle_console_echo(true);
+}
+
+void util::toggle_console_echo(bool on)
+{
+#ifdef WIN32
+	DWORD  mode = 0;
+	HANDLE hConIn = GetStdHandle(STD_INPUT_HANDLE);
+	GetConsoleMode(hConIn, &mode);
+	mode = on ? (mode | ENABLE_ECHO_INPUT) : (mode & (~ENABLE_ECHO_INPUT));
+	SetConsoleMode(hConIn, mode);
+#else
+	struct termios settings{};
+	tcgetattr(STDIN_FILENO, &settings);
+	settings.c_lflag = on ? (settings.c_lflag | ECHO) : (settings.c_lflag & (~ECHO));
+	tcsetattr(STDIN_FILENO, TCSANOW, &settings);
+#endif
+}
 void util::print_bytes(const std::span<const std::byte> bytes) {
     std::cout << std::hex << std::uppercase << std::setfill('0');
     for (const auto b : bytes) {

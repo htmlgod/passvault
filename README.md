@@ -9,16 +9,24 @@
 - [x] class vault for passwords
 - [x] HMAC (imitovstavka)
 - [x] encryption(kuznechik?)
-- [ ] configure program_options for login and other
-- [ ] add build instructions
-- [ ] Config
-- [ ] Config file
-- [ ] hash for DB check
+- [x] configure program_options for login and other
+- [x] Config
+- [x] Config file 
+- [ ] master key creation
+- [ ] first run config
 - [ ] pass entropy check
 - [ ] Pass gen
-- [ ] Shell
-- [ ] Refactor
 - [ ] CPACK
+- [ ] add build instructions
+- [ ] Refactor
+
+
+## EXTRA TODO:
+- [ ] hash for DB check
+- [ ] Shell
+- [ ] Use for every record pins(SALT)
+- [ ] Save creation date for record in order to update pass notify (example: upd passwords every year)
+- [ ] Use RSA (master password switch)
 
 
 ## REFS
