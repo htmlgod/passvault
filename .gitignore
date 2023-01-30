@@ -3,4 +3,6 @@
 *.aux
 *.idea*/
 test.db
-
+*.o
+*.dylib
+*.a

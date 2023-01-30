@@ -11,11 +11,14 @@ auto main(int argc, char** argv) -> int {
     desc.add_options()
         ("help,h", "produce help message")
         ("version,v", "print version string with additional info")
+        ("init,i", "create master key file and master password")
+        ("examine,e", "print DB info")
+        ("change_master_password", "change master password")
         ("put,p", po::value<std::vector<std::string> >(&args)->value_name("service login")->multitoken(), "    save password to db")
         ("take,t", po::value<std::vector<std::string> >(&args)->value_name("service")->multitoken(), "    save password to db")
         ("delete,d", po::value<std::vector<std::string> >(&args)->value_name("service"), "    save password to db")
         //("generate,g", po::value<std::vector<std::string> >(&args)->value_name("[service login]")->multitoken(), "    save password to db")
-        ("examine,e", "print DB info")
+
     ;
     po::variables_map vm;
     
@@ -27,7 +30,6 @@ auto main(int argc, char** argv) -> int {
         ("db_path", po::value<std::string>(&db_path)->default_value("passvault.db"), "path to DB file")
         ("weak_lvl", po::value<unsigned int>(&weak_pass_entropy_level)->default_value(10), "entropy level for weak password")
         ("master_key_path", po::value<std::string>(&master_key_path)->default_value(".master_key"), "path to master key file")
-        // entropy level for weak
         // DO AFTER GEN
         // password symbols
         // password len
@@ -39,6 +41,7 @@ auto main(int argc, char** argv) -> int {
 
         PassVaultConfig pv_cfg;
         std::ifstream ifs(CONFIG_FILE_NAME);
+        // define default values if cfg file not exists
         if (!ifs) {
             std::cout << "Error while opening config file: " << std::endl;
         }
@@ -91,7 +94,14 @@ auto main(int argc, char** argv) -> int {
             }
             pv.del_pass(args[0]);
         }
+        else if (vm.count("change_master_password")) {
+            pv.change_master_password();
+        }
+        else if (vm.count("init")) {
+            pv.init();
+        }
     }
+    // more types of exceptions
     catch(std::exception& e) {
         std::cout << e.what() << std::endl;
         std::cout << desc << std::endl;

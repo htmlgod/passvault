@@ -33,15 +33,16 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC 
     Boost::program_options 
     clip
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppcrypto/streebog.o
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppcrypto/cpuinfo.o
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppcrypto/crypto_hash.o
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppcrypto/gost3411-2012-sse2.o
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppcrypto/gost3411-2012-sse41.o
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppcrypto/block_cipher.o
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppcrypto/kuznyechik.o
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppcrypto/hmac.o
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppcrypto/pbkdf2.o
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppcrypto/ctr.o
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppcrypto/ctr-sse41.o
+    #${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppcrypto/streebog.o
+    #${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppcrypto/cpuinfo.o
+    #${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppcrypto/crypto_hash.o
+    #${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppcrypto/gost3411-2012-sse2.o
+    #${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppcrypto/gost3411-2012-sse41.o
+    #${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppcrypto/block_cipher.o
+    #${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppcrypto/kuznyechik.o
+    #${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppcrypto/hmac.o
+    #${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppcrypto/pbkdf2.o
+    #${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppcrypto/ctr.o
+    #${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppcrypto/ctr-sse41.o
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppcrypto/libcppcrypto.a
 )

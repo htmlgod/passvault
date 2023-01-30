@@ -3,8 +3,7 @@
 void util::save_bytes_to_file(uint8_t* bytes, size_t size, const std::string& file_name) {
     std::ofstream ofs(file_name, std::ios::binary);
     if (ofs) {
-        ofs.write(as_bytes(*bytes), size); // IDK WHAT IS HAPPENING HERE
-        std::cout << "WRITTEN TO " << file_name << std::endl;
+        ofs.write(as_bytes(*bytes), size);
     }
 }
 
@@ -12,13 +11,12 @@ void util::load_bytes_from_file(uint8_t* bytes, size_t size, const std::string& 
     std::ifstream ifs(file_name, std::ios::binary);
     if (ifs) {
         ifs.read(as_bytes(*bytes), size);
-        std::cout << "READ FROM " << file_name << std::endl;
     }
 }
 
-void util::input_master_password(std::string& pass) {
+void secrets::password::input_master_password(std::string& pass, const std::string& msg) {
     util::toggle_console_echo(false);
-    std::cout << "Enter master pass: ";
+    std::cout << msg;
     std::getline(std::cin, pass);
     std::cout << std::endl;
     util::toggle_console_echo(true);
@@ -91,4 +89,86 @@ void secrets::compute_hmac(uint8_t* hmac_key, uint8_t* iv, uint8_t* key, uint8_t
     hmac.update(iv, IV_SIZE);
     hmac.update(key, KEY_SIZE);
     hmac.final(hash);
+}
+
+void secrets::encrypt_master_key(uint8_t* key, uint8_t* master_key, uint8_t* encrypted_key) {
+    cppcrypto::kuznyechik kuz{};
+    kuz.init(key, cppcrypto::block_cipher::encryption);
+    kuz.encrypt_block(master_key, encrypted_key);
+    kuz.encrypt_block(master_key + kuz.blocksize()/8, encrypted_key + kuz.blocksize()/8);
+}
+void secrets::decrypt_master_key(uint8_t* key, uint8_t* encrypted_master_key, uint8_t* decrypted_master_key) {
+    cppcrypto::kuznyechik kuz{};
+    kuz.init(key, cppcrypto::block_cipher::decryption);
+    kuz.decrypt_block(encrypted_master_key, decrypted_master_key);
+    kuz.decrypt_block(encrypted_master_key + kuz.blocksize()/8, decrypted_master_key + kuz.blocksize()/8);
+}
+
+
+float secrets::password::get_user_selected_password_entropy(const std::string &pass) {
+    auto pass_len = pass.length();
+    if (pass_len == 0) {
+        return 0;
+    }
+    float entropy = 4;
+    if (pass_len < 9) entropy += (pass_len - 1) * 2; 
+    else entropy += 14;
+
+    if (pass_len > 8 and pass_len < 21) {
+        entropy += (pass_len - 8) * 1.5;
+    }
+    if (pass_len > 20) entropy += (pass_len - 20);
+
+    bool has_special_symbols = std::any_of(pass.begin(), pass.end(), [](unsigned char c){ return std::ispunct(c); });
+    bool has_uppercase = std::any_of(pass.begin(), pass.end(), [](unsigned char c){ return std::isupper(c); });
+    if (has_special_symbols or has_uppercase) {
+        entropy += 6;
+    }
+    return entropy;
+}
+
+secrets::password::Alphabet secrets::password::detect_pass_alphabet(const std::string &pass) {
+    if (std::all_of(pass.begin(), pass.end(), [](unsigned char c){ return std::isdigit(c); })) {
+        return Alphabet::numbers;
+    }
+    if (std::all_of(pass.begin(), pass.end(), [](unsigned char c){ return std::islower(c); })) {
+        return Alphabet::az;
+    }
+    if (std::all_of(pass.begin(), pass.end(), [](unsigned char c){ return std::isupper(c); })) {
+        return Alphabet::AZ;
+    }
+    if (std::all_of(pass.begin(), pass.end(), [](unsigned char c){ return std::isalpha(c); })) {
+        return Alphabet::azAZ;
+    }
+    bool contain_az = std::any_of(pass.begin(), pass.end(), [](unsigned char c){ return std::islower(c); });
+    bool contain_AZ = std::any_of(pass.begin(), pass.end(), [](unsigned char c){ return std::isupper(c); });
+    bool contain_alph = std::any_of(pass.begin(), pass.end(), [](unsigned char c){ return std::isalpha(c); });
+    bool contain_number = std::any_of(pass.begin(), pass.end(), [](unsigned char c){ return std::isdigit(c); });
+    bool contain_special_symbols = std::any_of(pass.begin(), pass.end(), [](unsigned char c){ return std::ispunct(c); });
+    if (contain_az and contain_number and not contain_special_symbols) {
+        return Alphabet::az09;
+    }
+    if (contain_AZ and contain_number and not contain_special_symbols) {
+        return Alphabet::AZ09;
+    }
+    if (contain_alph and contain_number and not contain_special_symbols) {
+        return Alphabet::azAZ09;
+    }
+    if (contain_alph and contain_number and contain_special_symbols) {
+        return Alphabet::ASCII_PRINTABLE;
+    }
+    return Alphabet::ASCII_PRINTABLE;
+}
+
+float secrets::password::get_generated_password_entropy(const std::string &pass, Alphabet alph) {
+    switch(alph) {
+        case Alphabet::numbers: return pass.length() * 3.322f;
+        case Alphabet::az: return pass.length() * 4.7f;
+        case Alphabet::AZ: return pass.length() * 4.7f;
+        case Alphabet::az09: return pass.length() * 5.170f;
+        case Alphabet::AZ09: return pass.length() * 5.170f;
+        case Alphabet::azAZ: return pass.length() * 5.7f;
+        case Alphabet::azAZ09: return pass.length() * 5.954;
+        case Alphabet::ASCII_PRINTABLE: return pass.length() * 6.570;
+    }
 }
