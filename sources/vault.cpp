@@ -64,6 +64,7 @@ void PassVault::load_db() {
         _vault[service] = ve;
     }
     delete[] tmp;
+    ifs.read(util::as_bytes(magic_check_header), sizeof(magic_check_header));
 }
 
 void PassVault::dump_db() {
@@ -80,6 +81,7 @@ void PassVault::dump_db() {
         ofs.write(service.c_str(), service.size());
         ofs.write(util::as_bytes(ve), sizeof(ve));
     }
+    ofs.write(util::as_bytes(magic_check_header), sizeof(magic_check_header));
 }
 
 VaultEntity PassVault::create_vault_entity(const std::string& login) {
@@ -130,10 +132,17 @@ void PassVault::encrypt_vault_entity_secrets(VaultEntity& ve) {
     uint8_t hmac_and_master_key_decryption_keys[DOUBLE_KEY_SIZE];
     secrets::gen_key_from_password(hmac_and_master_key_decryption_keys, DOUBLE_KEY_SIZE, _master_pass.c_str());
 
+
     uint8_t encrypted_master_key[KEY_SIZE];
     util::load_bytes_from_file(encrypted_master_key, KEY_SIZE, this->cfg.master_key_path);
     uint8_t master_key[KEY_SIZE];
     secrets::decrypt_master_key(hmac_and_master_key_decryption_keys, encrypted_master_key, master_key);
+
+    uint8_t encr_magic[256/8];
+    secrets::encrypt_master_key(master_key, MAGIC_HEADER, encr_magic);
+    if (!std::equal(encr_magic, encr_magic + KEY_SIZE, magic_check_header)) {
+        throw std::domain_error("wrong password");
+    }
 
     secrets::gen_random_bytes(ve.iv, IV_SIZE);
     uint8_t pass_encryption_key[KEY_SIZE];
@@ -180,7 +189,7 @@ void PassVault::change_master_password() {
 
 }
 
-void PassVault::init() const {
+void PassVault::init() {
     std::string master_pass = "a";
     std::string master_pass_check = "b";
     while (master_pass != master_pass_check) {
@@ -195,4 +204,6 @@ void PassVault::init() const {
     secrets::encrypt_master_key(master_password_key, master_key, encrypted_master_key);
     util::save_bytes_to_file(encrypted_master_key, KEY_SIZE, this->cfg.master_key_path);
     std::cout << "master key saved to " << this->cfg.master_key_path << std::endl;
+    secrets::encrypt_master_key(master_key, MAGIC_HEADER, magic_check_header);
+    dump_db();
 }

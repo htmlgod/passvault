@@ -41,7 +41,7 @@ public:
     void load_db();
     void examine();
     void change_master_password();
-    void init() const;
+    void init();
     ~PassVault();
 private:
     // create_master_key and master password procedure
@@ -54,5 +54,12 @@ private:
 
     std::map<std::string, VaultEntity> _vault;
     std::string _master_pass;
+    uint8_t magic_check_header[256/8];
     PassVaultConfig cfg;
+    uint8_t MAGIC_HEADER [256/8] = {
+        0xDE, 0xAD, 0xC0, 0xDE,
+        0xDE, 0xAD, 0xC0, 0xDE,
+        0xDE, 0xAD, 0xC0, 0xDE,
+        0xDE, 0xAD, 0xC0, 0xDE
+    };
 };
