@@ -33,7 +33,7 @@ struct VaultEntity {
 
 class PassVault {
 public:
-    explicit PassVault(const PassVaultConfig& pv_cfg);
+    PassVault(PassVaultConfig  pv_cfg, bool run_init=false);
     void save_pass(const std::string& service, const std::string& login);
     void get_pass(std::string& service);
     void del_pass(const std::string& service);
@@ -41,18 +41,20 @@ public:
     void load_db();
     void examine();
     void change_master_password();
-    void init() const;
+
     ~PassVault();
 private:
+    void init();
     // create_master_key and master password procedure
     VaultEntity create_vault_entity(const std::string& login);
     void encrypt_vault_entity_secrets(VaultEntity& ve);
     void decrypt_vault_entity_secrets(VaultEntity& ve);
 
-    static std::string get_password_from_clipboard() ;
-    static void save_password_to_clipboard(const std::string& password) ;
+    static std::string get_password_from_clipboard();
+    static void save_password_to_clipboard(const std::string& password);
 
     std::map<std::string, VaultEntity> _vault;
     std::string _master_pass;
+    uint8_t master_key_hmac[HMAC_SIZE]{};
     PassVaultConfig cfg;
 };

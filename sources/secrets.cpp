@@ -1,5 +1,15 @@
 #include <secrets.hpp>
 
+std::string secrets::password::create_change_password() {
+    std::string password = "a";
+    std::string tmp = "b";
+    while(password != tmp) {
+        secrets::password::input_master_password(password, "Enter new master password: ");
+        secrets::password::input_master_password(tmp, "Repeat master password: ");
+    }
+    return password;
+}
+
 void util::save_bytes_to_file(uint8_t* bytes, size_t size, const std::string& file_name) {
     std::ofstream ofs(file_name, std::ios::binary);
     if (ofs) {
@@ -37,7 +47,8 @@ void util::toggle_console_echo(bool on)
 	tcsetattr(STDIN_FILENO, TCSANOW, &settings);
 #endif
 }
-void util::print_bytes(const std::span<const std::byte> bytes) {
+
+[[maybe_unused]] void util::print_bytes(const std::span<const std::byte> bytes) {
     std::cout << std::hex << std::uppercase << std::setfill('0');
     for (const auto b : bytes) {
         std::cout << std::setw(2) << std::to_integer<int>(b) << ' ';
@@ -83,11 +94,17 @@ void secrets::decrypt_bytes(uint8_t* key, uint8_t* iv, uint8_t* bytes, size_t si
     cipher.init(key, KEY_SIZE, iv, IV_SIZE);
     cipher.decrypt(bytes, size, enc_bytes);
 }
-void secrets::compute_hmac(uint8_t* hmac_key, uint8_t* iv, uint8_t* key, uint8_t* hash) {
+void secrets::compute_hmac_vault_entity(uint8_t* hmac_key, uint8_t* iv, uint8_t* key, uint8_t* hash) {
     cppcrypto::hmac hmac(cppcrypto::streebog(HMAC_SIZE*8), hmac_key, KEY_SIZE);
     hmac.init();
     hmac.update(iv, IV_SIZE);
     hmac.update(key, KEY_SIZE);
+    hmac.final(hash);
+}
+void secrets::compute_hmac_from_data(uint8_t* hmac_key, uint8_t* data, size_t size, uint8_t* hash) {
+    cppcrypto::hmac hmac(cppcrypto::streebog(HMAC_SIZE*8), hmac_key, KEY_SIZE);
+    hmac.init();
+    hmac.update(data, size);
     hmac.final(hash);
 }
 
@@ -95,7 +112,7 @@ void secrets::encrypt_master_key(uint8_t* key, uint8_t* master_key, uint8_t* enc
     cppcrypto::kuznyechik kuz{};
     kuz.init(key, cppcrypto::block_cipher::encryption);
     kuz.encrypt_block(master_key, encrypted_key);
-    kuz.encrypt_block(master_key + kuz.blocksize()/8, encrypted_key + kuz.blocksize()/8);
+    kuz.encrypt_block(master_key + BLOCK_SIZE, encrypted_key + BLOCK_SIZE);
 }
 void secrets::decrypt_master_key(uint8_t* key, uint8_t* encrypted_master_key, uint8_t* decrypted_master_key) {
     cppcrypto::kuznyechik kuz{};
@@ -111,13 +128,13 @@ float secrets::password::get_user_selected_password_entropy(const std::string &p
         return 0;
     }
     float entropy = 4;
-    if (pass_len < 9) entropy += (pass_len - 1) * 2; 
+    if (pass_len < 9) entropy += (pass_len - 1.f) * 2;
     else entropy += 14;
 
     if (pass_len > 8 and pass_len < 21) {
-        entropy += (pass_len - 8) * 1.5;
+        entropy += (pass_len - 8.f) * 1.5f;
     }
-    if (pass_len > 20) entropy += (pass_len - 20);
+    if (pass_len > 20) entropy += (pass_len - 20.f);
 
     bool has_special_symbols = std::any_of(pass.begin(), pass.end(), [](unsigned char c){ return std::ispunct(c); });
     bool has_uppercase = std::any_of(pass.begin(), pass.end(), [](unsigned char c){ return std::isupper(c); });
@@ -163,12 +180,12 @@ secrets::password::Alphabet secrets::password::detect_pass_alphabet(const std::s
 float secrets::password::get_generated_password_entropy(const std::string &pass, Alphabet alph) {
     switch(alph) {
         case Alphabet::numbers: return pass.length() * 3.322f;
-        case Alphabet::az: return pass.length() * 4.7f;
+        case Alphabet::az:
         case Alphabet::AZ: return pass.length() * 4.7f;
-        case Alphabet::az09: return pass.length() * 5.170f;
+        case Alphabet::az09:
         case Alphabet::AZ09: return pass.length() * 5.170f;
         case Alphabet::azAZ: return pass.length() * 5.7f;
-        case Alphabet::azAZ09: return pass.length() * 5.954;
-        case Alphabet::ASCII_PRINTABLE: return pass.length() * 6.570;
+        case Alphabet::azAZ09: return pass.length() * 5.954f;
+        case Alphabet::ASCII_PRINTABLE: return pass.length() * 6.570f;
     }
 }
