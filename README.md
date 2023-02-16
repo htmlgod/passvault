@@ -5,39 +5,35 @@ passvault – minimalistic CLI app for managing your passwords
 ## Reqirements
 
 - YASM
+- C++20
 
 ## Build
-### Linux/Unix
-```
-# install yasm with apt or other package manager
+
+```bash
+#==============LINUX
+apt install yasm # or with another package manager
 git clone --recurse-submodules https://github.com/htmlgod/passvault
 cd passvault
+cd third_party/cppcrypto/
+make
+cd ../..
 cmake -S. -B_build
 cmake --build _build
+#==============macOS
+brew install yasm
+git clone --recurse-submodules https://github.com/htmlgod/passvault
+cd passvault
+cd third_party/cppcrypto/
+make
+cd ../..
+cmake -S. -B_build
+cmake --build _build
+#==============Windows
 ```
-
-### macOS
-```
-
-```
-
-### Windows
-```
-
-```
-
-## Install
 
 ## Configuration
 
 ## Usage
-
-## Examples
-
-
-## Dist package:
-1. Binary passvault
-2. Config file.cfg
 
 ## REFS
 
