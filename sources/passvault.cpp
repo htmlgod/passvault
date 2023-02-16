@@ -9,14 +9,14 @@ auto main(int argc, char** argv) -> int {
     std::vector<std::string> args;
     po::options_description desc("Allowed options");
     desc.add_options()
-        ("help,h", "produce help message")
-        ("version,v", "print version string with additional info")
-        ("init,i", "create master key file and master password")
-        ("examine,e", "print DB info")
+        ("help,h",                 "produce help message")
+        ("version,v",              "print version string with additional info")
+        ("examine,e",              "print DB info")
         ("change_master_password", "change master password")
+        ("init,i",                 "create master password and master key")
         ("put,p", po::value<std::vector<std::string> >(&args)->value_name("service login")->multitoken(), "    save password to db")
-        ("take,t", po::value<std::vector<std::string> >(&args)->value_name("service")->multitoken(), "    save password to db")
-        ("delete,d", po::value<std::vector<std::string> >(&args)->value_name("service"), "    save password to db")
+        ("take,t", po::value<std::vector<std::string> >(&args)->value_name("service")->multitoken(), "    get password from db")
+        ("delete,d", po::value<std::vector<std::string> >(&args)->value_name("service"), "    delete password from db")
         //("generate,g", po::value<std::vector<std::string> >(&args)->value_name("[service login]")->multitoken(), "    save password to db")
 
     ;
@@ -27,9 +27,9 @@ auto main(int argc, char** argv) -> int {
     std::string db_path;
     std::string master_key_path;
     config.add_options()
-        ("db_path", po::value<std::string>(&db_path)->default_value("passvault.db"), "path to DB file")
+        ("db_path", po::value<std::string>(&db_path)->default_value("PASSVAULT.db"), "path to DB file")
         ("weak_lvl", po::value<unsigned int>(&weak_pass_entropy_level)->default_value(10), "entropy level for weak password")
-        ("master_key_path", po::value<std::string>(&master_key_path)->default_value(".master_key"), "path to master key file")
+        ("master_key_path", po::value<std::string>(&master_key_path)->default_value(".PV_KEY"), "path to master key file")
         // DO AFTER GEN
         // password symbols
         // password len
@@ -41,9 +41,9 @@ auto main(int argc, char** argv) -> int {
 
         PassVaultConfig pv_cfg;
         std::ifstream ifs(CONFIG_FILE_NAME);
-        // define default values if cfg file not exists
         if (!ifs) {
             std::cout << "Error while opening config file: " << std::endl;
+            return 1;
         }
         else {
             po::store(po::parse_config_file(ifs, config), config_vm);
@@ -56,55 +56,53 @@ auto main(int argc, char** argv) -> int {
         }
 
         if (vm.size() > 1) {
-            throw std::logic_error("Error: Too many args");
+            throw po::error("Error: Too many args");
         }
 
-        PassVault pv{pv_cfg};
-        if (vm.count("help")) {
-            std::cout << desc << "\n";
-            return 0;
+
+        if (vm.count("init")) {
+            PassVault pv{pv_cfg, true};
         }
-        else if (vm.count("version")) {
-            std::cout << VERSION << "\n";
-            return 0;
-        }
-        else if (vm.count("examine")) {
-            //std::cout << VERSION << "\n";
-            pv.examine();
-            return 0;
-        }
-        else if (vm.count("put")) {
-            if (args.size() != 2) {
+        else {
+            PassVault pv{pv_cfg};
+            if (vm.count("help")) {
                 std::cout << desc << "\n";
-                return 1;
+                return 0;
+            } else if (vm.count("version")) {
+                std::cout << VERSION << "\n";
+                return 0;
+            } else if (vm.count("examine")) {
+                pv.examine();
+                return 0;
+            } else if (vm.count("put")) {
+                if (args.size() != 2) {
+                    std::cout << desc << "\n";
+                    return 1;
+                }
+                pv.save_pass(args[0], args[1]);
+            } else if (vm.count("take")) {
+                if (args.size() != 1) {
+                    std::cout << desc << "\n";
+                    return 1;
+                }
+                pv.get_pass(args[0]);
+            } else if (vm.count("delete")) {
+                if (args.size() != 1) {
+                    std::cout << desc << "\n";
+                    return 1;
+                }
+                pv.del_pass(args[0]);
+            } else if (vm.count("change_master_password")) {
+                pv.change_master_password();
             }
-            pv.save_pass(args[0], args[1]);
-        }
-        else if (vm.count("take")) {
-            if (args.size() != 1) {
-                std::cout << desc << "\n";
-                return 1;
-            }
-            pv.get_pass(args[0]);
-        }
-        else if (vm.count("delete")) {
-            if (args.size() != 1) {
-                std::cout << desc << "\n";
-                return 1;
-            }
-            pv.del_pass(args[0]);
-        }
-        else if (vm.count("change_master_password")) {
-            pv.change_master_password();
-        }
-        else if (vm.count("init")) {
-            pv.init();
         }
     }
-    // more types of exceptions
-    catch(std::exception& e) {
+    catch(po::error& e) {
         std::cout << e.what() << std::endl;
         std::cout << desc << std::endl;
+    }
+    catch(std::exception& e) {
+        std::cout << e.what() << std::endl;
     }
     return 0;
 }

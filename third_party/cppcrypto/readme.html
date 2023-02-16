@@ -364,11 +364,11 @@ then call <code>update()</code> any number of times to add the next chunk of dat
         virtual size_t keysize() const = 0;
 
         virtual bool init(const unsigned char* key, block_cipher::direction direction) = 0;
-        virtual void encrypt_block(const unsigned char* in, unsigned char* out) = 0;
-        virtual void decrypt_block(const unsigned char* in, unsigned char* out) = 0;
+        virtual void encrypt_master_key(const unsigned char* in, unsigned char* out) = 0;
+        virtual void decrypt_master_key(const unsigned char* in, unsigned char* out) = 0;
     };
 </pre>
-<p>A low-level interface to the block cipher. To start encryption or decryption, call <code>init()</code> (<code>key</code> should point to a key of <code>keysize()/8</code> bytes), then call <code>encrypt_block()</code> or <code>decrypt_block()</code> to encrypt or decrypt a single block of <code>blocksize()/8</code> bytes.<br>
+<p>A low-level interface to the block cipher. To start encryption or decryption, call <code>init()</code> (<code>key</code> should point to a key of <code>keysize()/8</code> bytes), then call <code>encrypt_master_key()</code> or <code>decrypt_master_key()</code> to encrypt or decrypt a single block of <code>blocksize()/8</code> bytes.<br>
 In practice in most cases you probably want to use block ciphers in an encryption mode via <code>cbc</code> or <code>ctr</code> class described below.</p>
 </html>
 <h3>4.2. Supported algorithms</h3>

@@ -1,12 +1,16 @@
+#include <utility>
 #include <vault.hpp>
 
-PassVault::PassVault(const PassVaultConfig& pv_cfg) : cfg(pv_cfg) {
-    // check for master key
-    if (!std::filesystem::exists(pv_cfg.master_key_path)) {
-        std::cout << "Master key not found." << std::endl;
+PassVault::PassVault(PassVaultConfig  pv_cfg, bool run_init) : cfg(std::move(pv_cfg)) {
+    if (!run_init) {
+        if (!std::filesystem::exists(cfg.master_key_path) and
+            !std::filesystem::exists(cfg.db_path)) {
+            throw std::logic_error("master key file and db not found, maybe you should run --init");
+        }
+            load_db();
     }
-    if (std::filesystem::exists(pv_cfg.db_path)) {
-        load_db();
+    else {
+        this->init();
     }
 }
 
@@ -64,7 +68,7 @@ void PassVault::load_db() {
         _vault[service] = ve;
     }
     delete[] tmp;
-    ifs.read(util::as_bytes(magic_check_header), sizeof(magic_check_header));
+    ifs.read(util::as_bytes(master_key_hmac), sizeof(master_key_hmac));
 }
 
 void PassVault::dump_db() {
@@ -81,7 +85,7 @@ void PassVault::dump_db() {
         ofs.write(service.c_str(), service.size());
         ofs.write(util::as_bytes(ve), sizeof(ve));
     }
-    ofs.write(util::as_bytes(magic_check_header), sizeof(magic_check_header));
+    ofs.write(util::as_bytes(master_key_hmac), sizeof(master_key_hmac));
 }
 
 VaultEntity PassVault::create_vault_entity(const std::string& login) {
@@ -97,7 +101,6 @@ void PassVault::save_pass(const std::string& service, const std::string& login) 
         auto ve = create_vault_entity(login);
         _vault.insert_or_assign(service, ve);
 }
-
 
 void PassVault::del_pass(const std::string& service) {
     this->_vault.erase(service);
@@ -130,7 +133,7 @@ void PassVault::encrypt_vault_entity_secrets(VaultEntity& ve) {
     ve.choice_entropy = secrets::password::get_user_selected_password_entropy(password);
 
     uint8_t hmac_and_master_key_decryption_keys[DOUBLE_KEY_SIZE];
-    secrets::gen_key_from_password(hmac_and_master_key_decryption_keys, DOUBLE_KEY_SIZE, _master_pass.c_str());
+    secrets::gen_key_from_password(hmac_and_master_key_decryption_keys, DOUBLE_KEY_SIZE, this->_master_pass.c_str());
 
 
     uint8_t encrypted_master_key[KEY_SIZE];
@@ -138,9 +141,9 @@ void PassVault::encrypt_vault_entity_secrets(VaultEntity& ve) {
     uint8_t master_key[KEY_SIZE];
     secrets::decrypt_master_key(hmac_and_master_key_decryption_keys, encrypted_master_key, master_key);
 
-    uint8_t encr_magic[256/8];
-    secrets::encrypt_master_key(master_key, MAGIC_HEADER, encr_magic);
-    if (!std::equal(encr_magic, encr_magic + KEY_SIZE, magic_check_header)) {
+    uint8_t master_key_check_hmac[HMAC_SIZE];
+    secrets::compute_hmac_from_data(hmac_and_master_key_decryption_keys + KEY_SIZE, master_key, KEY_SIZE, master_key_check_hmac);
+    if (!std::equal(master_key_check_hmac, master_key_check_hmac + HMAC_SIZE, this->master_key_hmac)) {
         throw std::domain_error("wrong password");
     }
 
@@ -148,7 +151,8 @@ void PassVault::encrypt_vault_entity_secrets(VaultEntity& ve) {
     uint8_t pass_encryption_key[KEY_SIZE];
     secrets::gen_random_bytes(pass_encryption_key, KEY_SIZE);
 
-    secrets::compute_hmac(hmac_and_master_key_decryption_keys + KEY_SIZE, ve.iv, pass_encryption_key, ve.hmac);
+    secrets::compute_hmac_vault_entity(master_key, ve.iv, pass_encryption_key,
+                                       ve.hmac);
 
     secrets::encrypt_bytes(pass_encryption_key, (uint8_t *)ve.iv, (uint8_t*)password.c_str(), ve.pass_len, (uint8_t *)ve.enc_password);
     secrets::encrypt_bytes(master_key, (uint8_t *)ve.iv, pass_encryption_key, KEY_SIZE, (uint8_t *)ve.enc_pass_key);
@@ -156,54 +160,79 @@ void PassVault::encrypt_vault_entity_secrets(VaultEntity& ve) {
 }
 
 void PassVault::decrypt_vault_entity_secrets(VaultEntity& ve) {
-    secrets::password::input_master_password(this->_master_pass);
+    try {
+        secrets::password::input_master_password(this->_master_pass);
 
+        uint8_t master_key_decryption_key[KEY_SIZE];
+        secrets::gen_key_from_password(master_key_decryption_key, KEY_SIZE, _master_pass.c_str());
+
+        uint8_t pass_key[KEY_SIZE];
+        uint8_t encrypted_master_key[KEY_SIZE];
+        util::load_bytes_from_file(encrypted_master_key, KEY_SIZE, this->cfg.master_key_path);
+        uint8_t master_key[KEY_SIZE];
+        secrets::decrypt_master_key(master_key_decryption_key, encrypted_master_key, master_key);
+
+
+        secrets::decrypt_bytes(master_key, (uint8_t *)ve.iv, (uint8_t *)ve.enc_pass_key, KEY_SIZE, (uint8_t *)pass_key);
+
+        uint8_t computed_hmac[HMAC_SIZE];
+        secrets::compute_hmac_vault_entity(master_key, ve.iv, pass_key, computed_hmac);
+
+        if (!std::equal(ve.hmac, ve.hmac + HMAC_SIZE, computed_hmac)) {
+            throw std::domain_error("wrong password");
+        }
+
+        char* tmp = new char[4096];
+        secrets::decrypt_bytes(pass_key, (uint8_t *)ve.iv, (uint8_t *)ve.enc_password, sizeof(ve.enc_password), (uint8_t *)tmp);
+        tmp[ve.pass_len] = '\0';
+        std::string out = tmp;
+        delete[] tmp;
+        save_password_to_clipboard(out);
+    }
+    catch (std::exception& e) {
+        std::cout << e.what() << std::endl;
+    }
+}
+
+void PassVault::change_master_password() {
+    secrets::password::input_master_password(this->_master_pass, "Enter old master password");
     uint8_t hmac_and_master_key_decryption_keys[DOUBLE_KEY_SIZE];
     secrets::gen_key_from_password(hmac_and_master_key_decryption_keys, DOUBLE_KEY_SIZE, _master_pass.c_str());
 
-    uint8_t pass_key[KEY_SIZE];
     uint8_t encrypted_master_key[KEY_SIZE];
     util::load_bytes_from_file(encrypted_master_key, KEY_SIZE, this->cfg.master_key_path);
     uint8_t master_key[KEY_SIZE];
     secrets::decrypt_master_key(hmac_and_master_key_decryption_keys, encrypted_master_key, master_key);
 
-
-    secrets::decrypt_bytes(master_key, (uint8_t *)ve.iv, (uint8_t *)ve.enc_pass_key, KEY_SIZE, (uint8_t *)pass_key);
-
-    uint8_t computed_hmac[HMAC_SIZE];
-    secrets::compute_hmac(hmac_and_master_key_decryption_keys + KEY_SIZE, ve.iv, pass_key, computed_hmac);
-
-    if (!std::equal(ve.hmac, ve.hmac + HMAC_SIZE, computed_hmac)) {
-        throw std::domain_error("wrong password");
+    uint8_t master_key_check_hmac[HMAC_SIZE];
+    secrets::compute_hmac_from_data(hmac_and_master_key_decryption_keys + KEY_SIZE, master_key, KEY_SIZE, master_key_check_hmac);
+    if (!std::equal(master_key_check_hmac, master_key_check_hmac + HMAC_SIZE, master_key_hmac)) {
+        throw std::domain_error("Wrong master password");
     }
-
-    char* tmp = new char[4096];
-    secrets::decrypt_bytes(pass_key, (uint8_t *)ve.iv, (uint8_t *)ve.enc_password, sizeof(ve.enc_password), (uint8_t *)tmp);
-    tmp[ve.pass_len] = '\0';
-    std::string out = tmp;
-    delete[] tmp;
-    save_password_to_clipboard(out);
-}
-
-void PassVault::change_master_password() {
-
+    _master_pass = secrets::password::create_change_password();
+    std::memset(hmac_and_master_key_decryption_keys, 0, sizeof hmac_and_master_key_decryption_keys);
+    secrets::gen_key_from_password(hmac_and_master_key_decryption_keys, DOUBLE_KEY_SIZE, _master_pass.c_str());
+    std::memset(encrypted_master_key, 0, sizeof encrypted_master_key);
+    secrets::encrypt_master_key(hmac_and_master_key_decryption_keys, master_key, encrypted_master_key);
+    util::save_bytes_to_file(encrypted_master_key, KEY_SIZE, this->cfg.master_key_path);
+    secrets::compute_hmac_from_data(hmac_and_master_key_decryption_keys + KEY_SIZE, master_key, KEY_SIZE, master_key_hmac);
+    dump_db();
 }
 
 void PassVault::init() {
-    std::string master_pass = "a";
-    std::string master_pass_check = "b";
-    while (master_pass != master_pass_check) {
-        secrets::password::input_master_password(master_pass, "Enter new master password: ");
-        secrets::password::input_master_password(master_pass_check, "Repeat master password: ");
-    }
+    _master_pass = secrets::password::create_change_password();
+
     uint8_t master_key[KEY_SIZE];
-    uint8_t master_password_key[KEY_SIZE];
     secrets::gen_random_bytes(master_key, KEY_SIZE);
-    secrets::gen_key_from_password(master_password_key, KEY_SIZE, master_pass.c_str());
+
+    uint8_t hmac_and_master_key_decryption_keys[DOUBLE_KEY_SIZE];
+    secrets::gen_key_from_password(hmac_and_master_key_decryption_keys, DOUBLE_KEY_SIZE, _master_pass.c_str());
+
     uint8_t encrypted_master_key[KEY_SIZE];
-    secrets::encrypt_master_key(master_password_key, master_key, encrypted_master_key);
+    secrets::encrypt_master_key(hmac_and_master_key_decryption_keys, master_key, encrypted_master_key);
     util::save_bytes_to_file(encrypted_master_key, KEY_SIZE, this->cfg.master_key_path);
-    std::cout << "master key saved to " << this->cfg.master_key_path << std::endl;
-    secrets::encrypt_master_key(master_key, MAGIC_HEADER, magic_check_header);
+
+    secrets::compute_hmac_from_data(hmac_and_master_key_decryption_keys + KEY_SIZE,
+                                    master_key, KEY_SIZE, this->master_key_hmac);
     dump_db();
 }

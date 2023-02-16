@@ -14,9 +14,14 @@
 - [x] pass entropy check
 - [x] master pass check (проверять при добавлении в базу, ибо мастер пасс
         является солью)
-- [x] add build instructions
+- [ ] add build instructions
 - [ ] ASLR!!!!!
 - [ ] CPACK
+
+Later:
+
+- [ ] exceptions
+- [ ] maybe clear memory before exception throw
 - [ ] Refactor
 - [ ] Pass gen (from random bytes)
 - [ ] Pass gen (from alph)
