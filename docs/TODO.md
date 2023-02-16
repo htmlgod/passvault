@@ -15,8 +15,8 @@
 - [x] master pass check (проверять при добавлении в базу, ибо мастер пасс
         является солью)
 - [ ] add build instructions
-- [ ] ASLR!!!!!
 - [ ] CPACK
+- [ ] ASLR!!!!!
 
 Later:
 
