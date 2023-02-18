@@ -1,10 +1,38 @@
 #include <utility>
 #include <vault.hpp>
 
+PassVaultConfig::PassVaultConfig(const std::string& db_filename, const std::string& mk_filename, float pw_weak_lvl) {
+    
+    auto homedir = get_user_home_dir();
+    auto data_dir = homedir / std::filesystem::path{DATA_DIR};
+    if (!std::filesystem::exists(data_dir)) {
+        std::filesystem::create_directory(data_dir);
+    }
+    auto db = data_dir /  std::filesystem::path{db_filename};
+    auto mk = data_dir /  std::filesystem::path{mk_filename};
+    this->database_filename = db.string();
+    this->master_key_filename = mk.string();
+    this->password_weakness_level = pw_weak_lvl;
+}
+
+std::filesystem::path PassVaultConfig::get_user_home_dir() const {
+    std::filesystem::path default_dir{"/root/"};
+#ifdef WIN32
+    if (const char* home_dir = std::getenv("USERPROFILE"))
+        return std::filesystem::path{home_dir};
+    if (const char* homedrive = std::getenv("HOMEDRIVE") and const char* homepath = std::getenv("HOMEPATH"))
+        return std::filesystem::path{homedrive} + fs::path{homepath};
+    default_dir = std::filesystem::path{"C:/"};
+#endif
+    if (const char* home_dir = std::getenv("HOME"))
+        return std::filesystem::path{home_dir};
+    return default_dir;
+}
+
 PassVault::PassVault(PassVaultConfig  pv_cfg, bool run_init) : cfg(std::move(pv_cfg)) {
     if (!run_init) {
-        if (!std::filesystem::exists(cfg.master_key_path) and
-            !std::filesystem::exists(cfg.db_path)) {
+        if (!std::filesystem::exists(cfg.master_key_filename) and
+            !std::filesystem::exists(cfg.database_filename)) {
             throw std::logic_error("master key file and db not found, maybe you should run --init");
         }
             load_db();
@@ -34,7 +62,7 @@ void PassVault::examine() {
     };
     print_delimiter();
     for (const auto& [service, ve] : this->_vault) {
-        std::string strength = (ve.rand_entropy < cfg.weak_password_entropy_level or ve.choice_entropy < cfg.weak_password_entropy_level) ? "Weak" : "Strong";
+        std::string strength = (ve.rand_entropy < cfg.password_weakness_level or ve.choice_entropy < cfg.password_weakness_level) ? "Weak" : "Strong";
         std::cout << v_sep << std::setw(15) << service
                   << v_sep << std::setw(25) << ve.login
                   << v_sep << std::setw(10) << ve.rand_entropy
@@ -47,7 +75,7 @@ void PassVault::examine() {
 // mb add checksum for db(hash)
 // add magic header for file and check
 void PassVault::load_db() {
-    std::ifstream ifs(this->cfg.db_path, std::ios::binary);
+    std::ifstream ifs(this->cfg.database_filename, std::ios::binary);
     if (!ifs.is_open()) {
         std::cout << "Failed to open DB" << std::endl;
     }
@@ -72,7 +100,7 @@ void PassVault::load_db() {
 }
 
 void PassVault::dump_db() {
-    std::ofstream ofs(this->cfg.db_path, std::ios::binary);
+    std::ofstream ofs(this->cfg.database_filename, std::ios::binary);
     if (!ofs.is_open()) {
         std::cout << "Failed to save DB" << std::endl;
     }
@@ -137,7 +165,7 @@ void PassVault::encrypt_vault_entity_secrets(VaultEntity& ve) {
 
 
     uint8_t encrypted_master_key[KEY_SIZE];
-    util::load_bytes_from_file(encrypted_master_key, KEY_SIZE, this->cfg.master_key_path);
+    util::load_bytes_from_file(encrypted_master_key, KEY_SIZE, this->cfg.master_key_filename);
     uint8_t master_key[KEY_SIZE];
     secrets::decrypt_master_key(hmac_and_master_key_decryption_keys, encrypted_master_key, master_key);
 
@@ -168,7 +196,7 @@ void PassVault::decrypt_vault_entity_secrets(VaultEntity& ve) {
 
         uint8_t pass_key[KEY_SIZE];
         uint8_t encrypted_master_key[KEY_SIZE];
-        util::load_bytes_from_file(encrypted_master_key, KEY_SIZE, this->cfg.master_key_path);
+        util::load_bytes_from_file(encrypted_master_key, KEY_SIZE, this->cfg.master_key_filename);
         uint8_t master_key[KEY_SIZE];
         secrets::decrypt_master_key(master_key_decryption_key, encrypted_master_key, master_key);
 
@@ -200,7 +228,7 @@ void PassVault::change_master_password() {
     secrets::gen_key_from_password(hmac_and_master_key_decryption_keys, DOUBLE_KEY_SIZE, _master_pass.c_str());
 
     uint8_t encrypted_master_key[KEY_SIZE];
-    util::load_bytes_from_file(encrypted_master_key, KEY_SIZE, this->cfg.master_key_path);
+    util::load_bytes_from_file(encrypted_master_key, KEY_SIZE, this->cfg.master_key_filename);
     uint8_t master_key[KEY_SIZE];
     secrets::decrypt_master_key(hmac_and_master_key_decryption_keys, encrypted_master_key, master_key);
 
@@ -214,7 +242,7 @@ void PassVault::change_master_password() {
     secrets::gen_key_from_password(hmac_and_master_key_decryption_keys, DOUBLE_KEY_SIZE, _master_pass.c_str());
     std::memset(encrypted_master_key, 0, sizeof encrypted_master_key);
     secrets::encrypt_master_key(hmac_and_master_key_decryption_keys, master_key, encrypted_master_key);
-    util::save_bytes_to_file(encrypted_master_key, KEY_SIZE, this->cfg.master_key_path);
+    util::save_bytes_to_file(encrypted_master_key, KEY_SIZE, this->cfg.master_key_filename);
     secrets::compute_hmac_from_data(hmac_and_master_key_decryption_keys + KEY_SIZE, master_key, KEY_SIZE, master_key_hmac);
     dump_db();
 }
@@ -230,7 +258,7 @@ void PassVault::init() {
 
     uint8_t encrypted_master_key[KEY_SIZE];
     secrets::encrypt_master_key(hmac_and_master_key_decryption_keys, master_key, encrypted_master_key);
-    util::save_bytes_to_file(encrypted_master_key, KEY_SIZE, this->cfg.master_key_path);
+    util::save_bytes_to_file(encrypted_master_key, KEY_SIZE, this->cfg.master_key_filename);
 
     secrets::compute_hmac_from_data(hmac_and_master_key_decryption_keys + KEY_SIZE,
                                     master_key, KEY_SIZE, this->master_key_hmac);

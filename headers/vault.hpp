@@ -11,13 +11,23 @@
 #include <secrets.hpp>
 
 const constexpr char* VERSION = "v0.1";
-const constexpr char* CONFIG_FILE_NAME = "passvault_config.cfg";
+#ifdef WIN32
+const constexpr char* CONFIG_FILE_NAME = "passvault_config.cfg"; // later
+const constexpr char* CONFIG_DIR = "passvault";
+#else
+const constexpr char* DATA_DIR = ".passvault";
+const constexpr char* CONFIG_FILE_NAME = "/etc/passvault/passvault_config.cfg";
+#endif
 
 struct PassVaultConfig {
-    std::string db_path;
-    std::string master_key_path;
-    float weak_password_entropy_level;
-    size_t password_length;
+    std::string database_filename;
+    std::string master_key_filename;
+    float password_weakness_level;
+    PassVaultConfig(const std::string& db_filename, const std::string& mk_filename, float pw_weak_lvl);
+
+    std::filesystem::path get_user_home_dir() const;
+private:
+    //size_t password_length;
 };
 
 struct VaultEntity {
