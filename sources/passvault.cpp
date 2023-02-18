@@ -23,13 +23,13 @@ auto main(int argc, char** argv) -> int {
     po::variables_map vm;
     
     po::options_description config;
-    unsigned int weak_pass_entropy_level;
+    float weak_pass_entropy_level;
     std::string db_path;
     std::string master_key_path;
     config.add_options()
-        ("db_path", po::value<std::string>(&db_path)->default_value("PASSVAULT.db"), "path to DB file")
-        ("weak_lvl", po::value<unsigned int>(&weak_pass_entropy_level)->default_value(10), "entropy level for weak password")
-        ("master_key_path", po::value<std::string>(&master_key_path)->default_value(".PV_KEY"), "path to master key file")
+        ("database_filename", po::value<std::string>(&db_path)->default_value("PASSVAULT.db"), "path to DB file")
+        ("password_weakness_level", po::value<float>(&weak_pass_entropy_level)->default_value(10.0f), "entropy level for weak password")
+        ("master_key_filename", po::value<std::string>(&master_key_path)->default_value(".PV_KEY"), "path to master key file")
         // DO AFTER GEN
         // password symbols
         // password len
@@ -39,7 +39,6 @@ auto main(int argc, char** argv) -> int {
         po::store(po::parse_command_line(argc, argv, desc), vm);
         po::notify(vm);
 
-        PassVaultConfig pv_cfg;
         std::ifstream ifs(CONFIG_FILE_NAME);
         if (!ifs) {
             std::cout << "Error while opening config file: " << std::endl;
@@ -49,29 +48,31 @@ auto main(int argc, char** argv) -> int {
             po::store(po::parse_config_file(ifs, config), config_vm);
             notify(config_vm);
         }
-        if (config_vm.count("db_path") and config_vm.count("weak_lvl")) {
-            pv_cfg.db_path = config_vm["db_path"].as<std::string>();
-            pv_cfg.weak_password_entropy_level = config_vm["weak_lvl"].as<unsigned int>();
-            pv_cfg.master_key_path = config_vm["master_key_path"].as<std::string>();
-        }
+
+        PassVaultConfig pv_cfg {
+            config_vm["database_filename"].as<std::string>(),
+            config_vm["master_key_filename"].as<std::string>(),
+            config_vm["password_weakness_level"].as<float>(),
+        };
 
         if (vm.size() > 1) {
             throw po::error("Error: Too many args");
         }
 
-
-        if (vm.count("init")) {
+        if (vm.count("help") or vm.size() == 0) {
+            std::cout << desc << "\n";
+            return 0;
+        } 
+        else if (vm.count("init")) {
             PassVault pv{pv_cfg, true};
+        }
+        else if (vm.count("version")) {
+            std::cout << VERSION << "\n";
+            return 0;
         }
         else {
             PassVault pv{pv_cfg};
-            if (vm.count("help")) {
-                std::cout << desc << "\n";
-                return 0;
-            } else if (vm.count("version")) {
-                std::cout << VERSION << "\n";
-                return 0;
-            } else if (vm.count("examine")) {
+            if (vm.count("examine")) {
                 pv.examine();
                 return 0;
             } else if (vm.count("put")) {
