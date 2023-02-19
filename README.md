@@ -9,16 +9,17 @@ passvault – minimalistic CLI app for managing your passwords
 
 ## Build
 
+Tested on macOS, Debian.
 ```bash
 #==============LINUX
-apt install yasm # or with another package manager
+apt install yasm libx11-dev# or with another package manager
 git clone --recurse-submodules https://github.com/htmlgod/passvault
 cd passvault
 cd third_party/cppcrypto/
 make
 cd ../..
-cmake -S. -B_build
-cmake --build _build
+cmake -S. -B_build -DCMAKE_BUILD_TYPE=Release
+sudo cmake --build _build --install
 #==============macOS
 brew install yasm
 git clone --recurse-submodules https://github.com/htmlgod/passvault
@@ -26,12 +27,27 @@ cd passvault
 cd third_party/cppcrypto/
 make
 cd ../..
-cmake -S. -B_build
-cmake --build _build
+cmake -S. -B_build -DCMAKE_BUILD_TYPE=Release
+sudo cmake --build _build --install
 #==============Windows
+TODO
 ```
 
 ## Configuration
+```bash
+#==============LINUX and MACOS
+$ cat /etc/passvault/passvault_config.cfg
+# PASSVAULT CONFIG FILE
+# UNCOMMENT AND EDIT SETTINGS
+
+# database_filename=TEST.DB
+# password_weakness_level=11
+# master_key_filename=MASTER.KEY
+
+$ passvault --init
+#==============Windows
+TODO
+```
 
 ## Usage
 
