@@ -30,6 +30,9 @@ private:
     //size_t password_length;
 };
 
+void write_string_binary(std::ofstream& ofs, const std::string& in_str);
+std::string read_string_binary(std::ifstream& ifs);
+
 struct VaultEntity {
     std::string login;
     size_t pass_len;

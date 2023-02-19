@@ -72,6 +72,21 @@ void PassVault::examine() {
     }
 }
 
+std::string read_string_binary(std::ifstream& ifs) {
+    size_t str_size;
+    ifs.read(util::as_bytes(str_size), sizeof(size_t));
+    char buf[str_size + 1];
+    ifs.read(buf, str_size);
+    buf[str_size] = '\0';
+    return std::string{buf};
+}
+
+void write_string_binary(std::ofstream& ofs, const std::string& in_str) {
+    auto str_size = in_str.size();
+    ofs.write(util::as_bytes(str_size), sizeof(str_size));
+    ofs.write(in_str.c_str(), in_str.size());
+}
+
 // mb add checksum for db(hash)
 // add magic header for file and check
 void PassVault::load_db() {
@@ -81,21 +96,19 @@ void PassVault::load_db() {
     }
     size_t records;
     ifs.read(util::as_bytes(records), sizeof(records));
-    char* tmp = new char[BUFFER_SIZE + 1];
     for (size_t i = 0; i < records; ++i) {
-        std::string service;
-        size_t service_str_size;
-        ifs.read(util::as_bytes(service_str_size), sizeof(size_t));
-
-        ifs.read(tmp, service_str_size);
-        tmp[service_str_size] = '\0';
-        service = tmp;
-
         VaultEntity ve{};
-        ifs.read(util::as_bytes(ve), sizeof(ve));
+        std::string service = read_string_binary(ifs);
+        ve.login = read_string_binary(ifs);
+        ifs.read(util::as_bytes(ve.pass_len), sizeof(ve.pass_len));
+        ifs.read(util::as_bytes(ve.enc_password), BUFFER_SIZE);
+        ifs.read(util::as_bytes(ve.enc_pass_key), KEY_SIZE);
+        ifs.read(util::as_bytes(ve.iv), IV_SIZE);
+        ifs.read(util::as_bytes(ve.hmac), HMAC_SIZE);
+        ifs.read(util::as_bytes(ve.rand_entropy), sizeof(float));
+        ifs.read(util::as_bytes(ve.choice_entropy), sizeof(float));
         _vault[service] = ve;
     }
-    delete[] tmp;
     ifs.read(util::as_bytes(master_key_hmac), sizeof(master_key_hmac));
 }
 
@@ -106,12 +119,17 @@ void PassVault::dump_db() {
     }
 
     auto entries = _vault.size();
-    ofs.write((const char*)&entries, sizeof(entries));
+    ofs.write(util::as_bytes(entries), sizeof(entries));
     for (auto& [service, ve] : _vault) {
-        auto service_str_size = service.size();
-        ofs.write(util::as_bytes(service_str_size), sizeof(service_str_size));
-        ofs.write(service.c_str(), service.size());
-        ofs.write(util::as_bytes(ve), sizeof(ve));
+        write_string_binary(ofs, service);
+        write_string_binary(ofs, ve.login);
+        ofs.write(util::as_bytes(ve.pass_len), sizeof(ve.pass_len));
+        ofs.write(util::as_bytes(ve.enc_password), BUFFER_SIZE);
+        ofs.write(util::as_bytes(ve.enc_pass_key), KEY_SIZE);
+        ofs.write(util::as_bytes(ve.iv), IV_SIZE);
+        ofs.write(util::as_bytes(ve.hmac), HMAC_SIZE);
+        ofs.write(util::as_bytes(ve.rand_entropy), sizeof(float));
+        ofs.write(util::as_bytes(ve.choice_entropy), sizeof(float));
     }
     ofs.write(util::as_bytes(master_key_hmac), sizeof(master_key_hmac));
 }
