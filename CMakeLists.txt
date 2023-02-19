@@ -46,3 +46,14 @@ target_link_libraries(${PROJECT_NAME}
     #${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppcrypto/ctr-sse41.o
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppcrypto/libcppcrypto.a
 )
+
+set(INSTALL_DIRECTORY "/usr/local/bin")
+set(CFG_DIRECTORY "/etc/passvault")
+if (WIN32)
+    set(INSTALL_DIRECTORY "/usr/local/bin")
+    set(CFG_DIRECTORY "/etc/passvault")
+endif (WIN32)
+
+install(TARGETS ${PROJECT_NAME} DESTINATION ${INSTALL_DIRECTORY})
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dist/passvault_config.cfg DESTINATION ${CFG_DIRECTORY})
+

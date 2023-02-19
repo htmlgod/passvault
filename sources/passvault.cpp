@@ -11,12 +11,12 @@ auto main(int argc, char** argv) -> int {
     desc.add_options()
         ("help,h",                 "produce help message")
         ("version,v",              "print version string with additional info")
-        ("examine,e",              "print DB info")
-        ("change_master_password", "change master password")
         ("init,i",                 "create master password and master key")
-        ("put,p", po::value<std::vector<std::string> >(&args)->value_name("service login")->multitoken(), "    save password to db")
-        ("take,t", po::value<std::vector<std::string> >(&args)->value_name("service")->multitoken(), "    get password from db")
-        ("delete,d", po::value<std::vector<std::string> >(&args)->value_name("service"), "    delete password from db")
+        ("change_master_password", "change master password")
+        ("examine,e",              "print DB info")
+        ("put,p", po::value<std::vector<std::string> >(&args)->value_name("<service> <login>")->multitoken(), "    save password and login to db for given service")
+        ("take,t", po::value<std::vector<std::string> >(&args)->value_name("<service>")->multitoken(), "    get password from db for given service")
+        ("delete,d", po::value<std::vector<std::string> >(&args)->value_name("<service>"), "    delete password from db for given service")
         //("generate,g", po::value<std::vector<std::string> >(&args)->value_name("[service login]")->multitoken(), "    save password to db")
 
     ;
