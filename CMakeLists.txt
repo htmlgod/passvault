@@ -7,7 +7,7 @@ HunterGate(
     SHA1 "00901c19eefc02d24b16705b5f5a2b4f093a73fb"
 )
 
-project(passvault)
+project(passvault VERSION 0.0.1)
 
 set(CLIP_EXAMPLES OFF CACHE BOOL "Compile clip examples")
 set(CLIP_TESTS OFF CACHE BOOL "Compile clip tests")
@@ -57,3 +57,14 @@ endif (WIN32)
 install(TARGETS ${PROJECT_NAME} DESTINATION ${INSTALL_DIRECTORY})
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dist/passvault_config.cfg DESTINATION ${CFG_DIRECTORY})
 
+set(CPACK_GENERATOR "DEB")
+
+# Set a Package Maintainer.
+# This is required
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "htmlgod")
+
+# Set a Package Version
+set(CPACK_PACKAGE_VERSION ${CMAKE_PROJECT_VERSION})
+
+# Include CPack
+include(CPack)
