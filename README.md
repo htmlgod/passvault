@@ -41,3 +41,7 @@ cmake --build _build
 2. [HUNTER](https://hunter.readthedocs.io/en/latest/quick-start/boost-components.html#)
 3. [clip](https://github.com/dacap/clip/wiki#who-is-using-clip)
 4. [cppcrypto](https://cppcrypto.sourceforge.net/)
+
+## License
+
+[MIT](https://choosealicense.com/licenses/mit/)
